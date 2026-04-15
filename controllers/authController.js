@@ -11,7 +11,13 @@ exports.login = async (req, res) => {
     );
 
     if (admin.rows.length > 0) {
-      return res.json({ role: "admin", data: admin.rows[0] });
+      const { password, ...adminData } = admin.rows[0];
+
+      return res.json({
+        status: "success",
+        data: [adminData],
+        message: "Login berhasil sebagai admin",
+      });
     }
 
     // cek user
@@ -21,11 +27,26 @@ exports.login = async (req, res) => {
     );
 
     if (user.rows.length > 0) {
-      return res.json({ role: "user", data: user.rows[0] });
+      const { password, ...userData } = user.rows[0];
+
+      return res.json({
+        status: "success",
+        data: [userData],
+        message: "Login berhasil sebagai user",
+      });
     }
 
-    res.status(401).json({ message: "Login gagal" });
+    return res.status(401).json({
+      status: "error",
+      message: "Email atau password salah",
+    });
+
   } catch (err) {
-    res.status(500).json(err);
+    console.error("LOGIN ERROR:", err); 
+
+    res.status(500).json({
+      status: "error",
+      message: err.message,
+    });
   }
 };
