@@ -8,33 +8,90 @@ exports.getCourses = async (req, res) => {
 exports.createCourse = async (req, res) => {
   const { admin_id, nama_course, deskripsi, tipe_course, harga } = req.body;
 
-  await db.query(
-    `INSERT INTO courses (admin_id, nama_course, deskripsi, tipe_course, harga)
-     VALUES ($1,$2,$3,$4,$5)`,
-    [admin_id, nama_course, deskripsi, tipe_course, harga]
-  );
+  if (!admin_id || !nama_course || !tipe_course) {
+    return res.status(400).json({
+      status: "error",
+      message: "Data tidak lengkap",
+    });
+  }
 
-  res.json({ message: "Course berhasil dibuat" });
+  try {
+    const result = await db.query(
+      `INSERT INTO courses (admin_id, nama_course, deskripsi, tipe_course, harga)
+       VALUES ($1,$2,$3,$4,$5) RETURNING *`,
+      [admin_id, nama_course, deskripsi, tipe_course, harga]
+    );
+
+    res.json({
+      status: "success",
+      data: result.rows,
+      message: "Course berhasil dibuat",
+    });
+  } catch (err) {
+    res.status(500).json({
+      status: "error",
+      message: err.message,
+    });
+  }
 };
 
 exports.updateCourse = async (req, res) => {
   const { id } = req.params;
   const { nama_course, deskripsi, tipe_course, harga } = req.body;
 
-  await db.query(
-    `UPDATE courses 
-     SET nama_course=$1, deskripsi=$2, tipe_course=$3, harga=$4, updated_at=NOW()
-     WHERE course_id=$5`,
-    [nama_course, deskripsi, tipe_course, harga, id]
-  );
+  try {
+    const result = await db.query(
+      `UPDATE courses 
+       SET nama_course=$1, deskripsi=$2, tipe_course=$3, harga=$4, updated_at=NOW()
+       WHERE course_id=$5 RETURNING *`,
+      [nama_course, deskripsi, tipe_course, harga, id]
+    );
 
-  res.json({ message: "Course diupdate" });
+    if (result.rowCount === 0) {
+      return res.status(404).json({
+        status: "error",
+        message: "Course tidak ditemukan",
+      });
+    }
+
+    res.json({
+      status: "success",
+      data: result.rows,
+      message: "Course berhasil diupdate",
+    });
+  } catch (err) {
+    res.status(500).json({
+      status: "error",
+      message: err.message,
+    });
+  }
 };
 
 exports.deleteCourse = async (req, res) => {
   const { id } = req.params;
 
-  await db.query("DELETE FROM courses WHERE course_id=$1", [id]);
+  try {
+    const result = await db.query(
+      "DELETE FROM courses WHERE course_id=$1 RETURNING *",
+      [id]
+    );
 
-  res.json({ message: "Course dihapus" });
+    if (result.rowCount === 0) {
+      return res.status(404).json({
+        status: "error",
+        message: "Course tidak ditemukan",
+      });
+    }
+
+    res.json({
+      status: "success",
+      data: result.rows,
+      message: "Course berhasil dihapus",
+    });
+  } catch (err) {
+    res.status(500).json({
+      status: "error",
+      message: err.message,
+    });
+  }
 };
